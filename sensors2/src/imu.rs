@@ -10,40 +10,37 @@ use uom::si::f32::{Acceleration, AngularVelocity};
 use crate::wait_ok;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ICM20648Error;
+pub struct ICM20600Error;
 
-impl From<Infallible> for ICM20648Error {
+impl From<Infallible> for ICM20600Error {
     fn from(_error: Infallible) -> Self {
         Self
     }
 }
 
-pub struct ICM20648<T> {
+pub struct ICM20600<T> {
     cs: T,
     accel_offset: Acceleration,
     gyro_offset: AngularVelocity,
 }
 
-impl<T> ICM20648<T>
+impl<T> ICM20600<T>
 where
     T: OutputPin,
 {
     //RA: register address
-    //all bank
-    const RA_REG_BANK_SEL: u8 = 0x7F;
-    //user bank 0
-    const RA_WHO_AM_I: u8 = 0x00;
-    const RA_LP_CONFIG: u8 = 0x05;
-    const RA_PWR_MGMT_1: u8 = 0x06;
+    //user configuration
+    const RA_PWR_MGMT_1: u8 = 0x6B;
+    const RA_LP_CONFIG: u8 = 0x1A;
+    const RA_GYRO_CONFIG_1: u8 = 0x1B;
+    const RA_ACCEL_CONFIG: u8 = 0x1C;
     //gyrometer
-    const RA_GYRO_Z_OUT_H: u8 = 0x37;
+    const RA_GYRO_Z_OUT_H: u8 = 0x47;
     //accelerometer
-    const RA_ACCEL_Y_OUT_H: u8 = 0x2F;
-    //user bank 2
-    const RA_GYRO_CONFIG_1: u8 = 0x01;
-    const RA_ACCEL_CONFIG: u8 = 0x14;
+    const RA_ACCEL_Y_OUT_H: u8 = 0x3D;
 
-    const ICM20648_DEVICE_ID: u8 = 0xE0;
+    const RA_WHO_AM_I: u8 = 0x75;
+    const ICM20600_DEVICE_ID: u8 = 0x11;
 
     const GYRO_SENSITIVITY_SCALE_FACTOR: AngularVelocity = AngularVelocity {
         dimension: PhantomData,
@@ -53,7 +50,8 @@ where
     const ACCEL_SENSITIVITY_SCALE_FACTOR: Acceleration = Acceleration {
         dimension: PhantomData,
         units: PhantomData,
-        value: 0.000_598_550_4,
+        value: 0.000_122_070_3,
+        // value: 0.000_598_550_4,
     };
 
     const CALIBRATION_NUM: u16 = 1000;
@@ -81,7 +79,7 @@ where
         V: DelayMs<u32>,
         W: CountDown,
     {
-        wait_ok!(self.write_to_register(spi, Self::RA_PWR_MGMT_1, 0x80)); //reset icm20648
+        wait_ok!(self.write_to_register(spi, Self::RA_PWR_MGMT_1, 0x80)); //reset ICM20600
 
         delay.delay_ms(10); //wait while reset
 
@@ -92,20 +90,17 @@ where
             wait_ok!(self.write_to_register(spi, register, value));
         };
 
-        write(Self::RA_PWR_MGMT_1, 0x01);
+        write(Self::RA_PWR_MGMT_1, 0x01); //auto selects the best available clock source
 
         write(Self::RA_LP_CONFIG, 0x00); //disable duty cycle mode for gyro
 
-        write(Self::RA_REG_BANK_SEL, 0x20); //switch to user bank 2
-
         //configure gryo to +-2000dps in full scale
-        write(Self::RA_GYRO_CONFIG_1, 0x06);
+        write(Self::RA_GYRO_CONFIG_1, 0x18);
 
         //disable digital low path filter
-        //configure accelerometer to +-2g
-        write(Self::RA_ACCEL_CONFIG, 0x00);
+        //configure accelerometer to +-4g
+        write(Self::RA_ACCEL_CONFIG, 0x08);
 
-        write(Self::RA_REG_BANK_SEL, 0x00); //switch to user bank 0
 
         self.accel_offset = Default::default();
         self.gyro_offset = Default::default();
@@ -113,7 +108,7 @@ where
         wait_ok!(self.calibrate(spi, timer));
     }
 
-    pub fn calibrate<S, W>(&mut self, spi: &mut S, timer: &mut W) -> Result<(), ICM20648Error>
+    pub fn calibrate<S, W>(&mut self, spi: &mut S, timer: &mut W) -> Result<(), ICM20600Error>
     where
         W: CountDown,
         S: Transfer<u8>,
@@ -132,22 +127,22 @@ where
         Ok(())
     }
 
-    fn check_who_am_i<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<(), ICM20648Error> {
+    fn check_who_am_i<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<(), ICM20600Error> {
         let mut buffer = [0; 2];
         let buffer = self.read_from_registers(spi, Self::RA_WHO_AM_I, &mut buffer)?;
-        if buffer[0] == Self::ICM20648_DEVICE_ID {
+        if buffer[0] == Self::ICM20600_DEVICE_ID {
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
         }
     }
 
-    fn assert(&mut self) -> Result<(), ICM20648Error> {
-        self.cs.set_low().map_err(|_| ICM20648Error)
+    fn assert(&mut self) -> Result<(), ICM20600Error> {
+        self.cs.set_low().map_err(|_| ICM20600Error)
     }
 
-    fn deassert(&mut self) -> Result<(), ICM20648Error> {
-        self.cs.set_high().map_err(|_| ICM20648Error)
+    fn deassert(&mut self) -> Result<(), ICM20600Error> {
+        self.cs.set_high().map_err(|_| ICM20600Error)
     }
 
     fn write_to_register<S: Transfer<u8>>(
@@ -155,7 +150,7 @@ where
         spi: &mut S,
         address: u8,
         data: u8,
-    ) -> Result<(), ICM20648Error> {
+    ) -> Result<(), ICM20600Error> {
         self.assert()?;
         let res = Self::_write_to_register(spi, address, data);
         self.deassert()?;
@@ -166,9 +161,9 @@ where
         spi: &mut S,
         address: u8,
         data: u8,
-    ) -> Result<(), ICM20648Error> {
+    ) -> Result<(), ICM20600Error> {
         spi.transfer(&mut [address, data])
-            .map_err(|_| ICM20648Error)?;
+            .map_err(|_| ICM20600Error)?;
         Ok(())
     }
 
@@ -178,7 +173,7 @@ where
         spi: &mut S,
         address: u8,
         buffer: &'w mut [u8],
-    ) -> Result<&'w [u8], ICM20648Error> {
+    ) -> Result<&'w [u8], ICM20600Error> {
         self.assert()?;
         let res = Self::_read_from_registers(spi, address, buffer);
         self.deassert()?;
@@ -189,9 +184,9 @@ where
         spi: &mut S,
         address: u8,
         buffer: &'w mut [u8],
-    ) -> Result<&'w [u8], ICM20648Error> {
+    ) -> Result<&'w [u8], ICM20600Error> {
         buffer[0] = address | 0x80;
-        let buffer = spi.transfer(buffer).map_err(|_| ICM20648Error)?;
+        let buffer = spi.transfer(buffer).map_err(|_| ICM20600Error)?;
         Ok(&buffer[1..])
     }
 
@@ -201,7 +196,7 @@ where
     }
 
     fn convert_raw_data_to_angular_velocity(&mut self, gyro_value: i16) -> AngularVelocity {
-        Self::GYRO_SENSITIVITY_SCALE_FACTOR * gyro_value as f32 * 0.99
+        Self::GYRO_SENSITIVITY_SCALE_FACTOR * gyro_value as f32
     }
 
     fn convert_raw_data_to_acceleration(&mut self, accel_value: i16) -> Acceleration {
@@ -211,7 +206,7 @@ where
     pub fn angular_velocity<S: Transfer<u8>>(
         &mut self,
         spi: &mut S,
-    ) -> nb::Result<AngularVelocity, ICM20648Error> {
+    ) -> nb::Result<AngularVelocity, ICM20600Error> {
         let mut buffer = [0; 3];
         let buffer = self.read_from_registers(spi, Self::RA_GYRO_Z_OUT_H, &mut buffer)?;
         Ok(
@@ -223,7 +218,7 @@ where
     pub fn translational_acceleration<S: Transfer<u8>>(
         &mut self,
         spi: &mut S,
-    ) -> nb::Result<Acceleration, ICM20648Error> {
+    ) -> nb::Result<Acceleration, ICM20600Error> {
         let mut buffer = [0; 3];
         let buffer = self.read_from_registers(spi, Self::RA_ACCEL_Y_OUT_H, &mut buffer)?;
         Ok(
