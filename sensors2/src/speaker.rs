@@ -1,5 +1,4 @@
 use embedded_hal::PwmPin;
-use uom::si::{ratio::ratio};
 
 pub struct Speaker<P>
 where
@@ -21,7 +20,7 @@ impl<P> Speaker<P>
 where
     P: PwmPin<Duty = u16>,
 {
-    pub fn apply(&mut self, duty_ratio: ratio) {
+    pub fn apply(&mut self, mut duty_ratio: f32) {
         if duty_ratio > 1.0 {
             duty_ratio = 1.0;
         }
