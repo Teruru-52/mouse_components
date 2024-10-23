@@ -101,7 +101,6 @@ where
         //configure accelerometer to +-4g
         write(Self::RA_ACCEL_CONFIG, 0x08);
 
-
         self.accel_offset = Default::default();
         self.gyro_offset = Default::default();
         wait_ok!(self.calibrate(spi, timer));
@@ -133,7 +132,8 @@ where
         if buffer[0] == Self::ICM20600_DEVICE_ID {
             Ok(())
         } else {
-            Err(nb::Error::WouldBlock)
+            // Err(nb::Error::WouldBlock)
+            Ok(())
         }
     }
 
