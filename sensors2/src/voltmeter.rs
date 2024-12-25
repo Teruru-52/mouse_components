@@ -57,7 +57,7 @@ where
     }
 
     #[allow(unused)]
-    pub fn update_voltage<T>(&mut self, adc: &mut T)
+    pub fn update_voltage<T>(&mut self, adc: &mut Mutex<T>)
     where
         T: OneShot<ADC, u16, PIN>,
         <T as OneShot<ADC, u16, PIN>>::Error: core::fmt::Debug,
@@ -65,12 +65,12 @@ where
         self.voltage = self.alpha * self.voltage + (1.0 - self.alpha) * self.current_voltage(adc);
     }
 
-    fn current_voltage<T>(&mut self, adc: &mut T) -> ElectricPotential
+    fn current_voltage<T>(&mut self, adc: &mut Mutex<T>) -> ElectricPotential
     where
         T: OneShot<ADC, u16, PIN>,
         <T as OneShot<ADC, u16, PIN>>::Error: core::fmt::Debug,
     {
-        let value = block!(adc.read(&mut self.adc_pin)).unwrap() as f32;
+        let value = block!(adc.lock().read(&mut self.adc_pin)).unwrap() as f32;
         value * Self::AVDD_VOLTAGE * self.ratio / Self::MAX_ADC_VALUE
     }
 
