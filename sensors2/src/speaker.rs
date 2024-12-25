@@ -23,10 +23,10 @@ where
     pub fn apply(&mut self, mut duty_ratio: f32) {
         if duty_ratio > 1.0 {
             duty_ratio = 1.0;
-        }
-        else if duty_ratio < 0.0 {
+        } else if duty_ratio < 0.0 {
             duty_ratio = 0.0;
         }
-        self.pwm_pin.set_duty(((1.0 - duty_ratio) * self.pwm_pin.get_max_duty() as f32) as u16);
+        self.pwm_pin
+            .set_duty((duty_ratio * self.pwm_pin.get_max_duty() as f32) as u16);
     }
 }
