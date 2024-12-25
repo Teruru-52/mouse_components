@@ -132,8 +132,7 @@ where
         if buffer[0] == Self::ICM20600_DEVICE_ID {
             Ok(())
         } else {
-            // Err(nb::Error::WouldBlock)
-            Ok(())
+            Err(nb::Error::WouldBlock)
         }
     }
 
