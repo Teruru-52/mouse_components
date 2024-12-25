@@ -30,7 +30,7 @@ where
         value: 3.3,
     };
     const MAX_ADC_VALUE: f32 = 4096.0;
-    // const SUM_NUM: u16 = 100;
+    const SUM_NUM: u16 = 100;
 
     pub fn new(
         adc_pin: PIN,
@@ -48,12 +48,20 @@ where
             _adc_marker: PhantomData,
         };
 
-        // let mut sum = ElectricPotential::default();
-        // for _ in 0..Self::SUM_NUM {
-        //     sum += voltmeter.current_voltage();
-        // }
-        // voltmeter.voltage = sum / Self::SUM_NUM as f32;
         voltmeter
+    }
+
+    #[allow(unused)]
+    pub fn init<T>(&mut self, adc: &mut Mutex<T>)
+    where
+        T: OneShot<ADC, u16, PIN>,
+        <T as OneShot<ADC, u16, PIN>>::Error: core::fmt::Debug,
+    {
+        let mut sum = ElectricPotential::default();
+        for _ in 0..Self::SUM_NUM {
+            sum += self.current_voltage(adc);
+        }
+        self.voltage = sum / Self::SUM_NUM as f32;
     }
 
     #[allow(unused)]
