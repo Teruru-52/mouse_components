@@ -51,7 +51,7 @@ where
     }
 
     #[allow(unused)]
-    fn update_value<T>(&mut self, adc: &mut Mutex<T>)
+    pub fn update_value<T>(&mut self, adc: &mut Mutex<T>)
     where
         T: OneShot<ADC, u16, AdcPin>,
         <T as OneShot<ADC, u16, AdcPin>>::Error: core::fmt::Debug,
@@ -60,7 +60,7 @@ where
     }
 
     #[allow(unused)]
-    fn value(&self) -> u16 {
+    pub fn value(&self) -> u16 {
         self.value
     }
 }
