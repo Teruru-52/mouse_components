@@ -29,14 +29,14 @@ where
         infrared
     }
 
-    pub fn init<P>(&mut self, tim_pin: &mut Mutex<P>)
+    pub fn init<P>(&mut self, tim_pin: &mut P)
     where
         P: PwmPin<Duty = u16>,
     {
         self.apply(self.ratio, tim_pin);
     }
 
-    pub fn apply<P>(&mut self, mut duty_ratio: f32, tim_pin: &mut Mutex<P>)
+    pub fn apply<P>(&mut self, mut duty_ratio: f32, tim_pin: &mut P)
     where
         P: PwmPin<Duty = u16>,
     {
@@ -45,10 +45,8 @@ where
         } else if duty_ratio < 0.0 {
             duty_ratio = 0.0;
         }
-        tim_pin.lock().set_duty(tim_pin.lock().get_max_duty());
-        tim_pin
-            .lock()
-            .set_duty((duty_ratio * tim_pin.lock().get_max_duty() as f32) as u16);
+        tim_pin.set_duty(tim_pin.get_max_duty());
+        tim_pin.set_duty((duty_ratio * tim_pin.get_max_duty() as f32) as u16);
         self.ratio = duty_ratio;
     }
 
