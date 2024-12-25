@@ -2,18 +2,19 @@ use core::marker::PhantomData;
 
 use embedded_hal::adc::{Channel, OneShot};
 use nb::block;
+use spin::Mutex;
 use uom::si::{
     electric_potential::volt,
     f32::{ElectricPotential, Frequency, Time},
     ratio::ratio,
 };
 
-pub struct Voltmeter<'a, T, ADC, PIN>
+pub struct Voltmeter<T, ADC, PIN>
 where
     T: OneShot<ADC, u16, PIN>,
     PIN: Channel<ADC>,
 {
-    adc: &'a mut T,
+    adc: Mutex<T>,
     adc_pin: PIN,
     voltage: ElectricPotential,
     alpha: f32,
@@ -21,7 +22,7 @@ where
     _adc_marker: PhantomData<ADC>,
 }
 
-impl<'a, T, ADC, PIN> Voltmeter<'a, T, ADC, PIN>
+impl<T, ADC, PIN> Voltmeter<T, ADC, PIN>
 where
     T: OneShot<ADC, u16, PIN>,
     PIN: Channel<ADC>,
@@ -36,7 +37,7 @@ where
     const SUM_NUM: u16 = 100;
 
     pub fn new(
-        adc: &'a mut T,
+        adc: Mutex<T>,
         adc_pin: PIN,
         period: Time,
         cut_off_frequency: Frequency,
@@ -67,7 +68,7 @@ where
     }
 
     fn current_voltage(&mut self) -> ElectricPotential {
-        let value = block!(self.adc.read(&mut self.adc_pin)).unwrap() as f32;
+        let value = block!(self.adc.lock().read(&mut self.adc_pin)).unwrap() as f32;
         value * Self::AVDD_VOLTAGE * self.ratio / Self::MAX_ADC_VALUE
     }
 
