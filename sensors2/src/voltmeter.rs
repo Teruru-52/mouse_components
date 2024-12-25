@@ -1,8 +1,8 @@
 use core::marker::PhantomData;
-use embedded_hal::adc::Channel;
+
+use embedded_hal::adc::{Channel, OneShot};
 use nb::block;
-use stm32f4xx_hal::adc::{Adc, AdcConfig, OneShot};
-use stm32f4xx_hal::gpio::{Analog, Pin};
+use spin::Mutex;
 use uom::si::{
     electric_potential::volt,
     f32::{ElectricPotential, Frequency, Time},
@@ -11,8 +11,7 @@ use uom::si::{
 
 pub struct Voltmeter<ADC, PIN>
 where
-    ADC: OneShot<Adc<ADC>, u16, PIN>,
-    PIN: Channel<Adc<ADC>>,
+    PIN: Channel<ADC>,
 {
     adc_pin: PIN,
     voltage: ElectricPotential,
@@ -23,9 +22,7 @@ where
 
 impl<ADC, PIN> Voltmeter<ADC, PIN>
 where
-    ADC: OneShot<Adc<ADC>, u16, PIN>,
-    PIN: Channel<Adc<ADC>>,
-    <Adc<ADC> as OneShot<Adc<ADC>, u16, PIN>>::Error: core::fmt::Debug,
+    PIN: Channel<ADC>,
 {
     const AVDD_VOLTAGE: ElectricPotential = ElectricPotential {
         dimension: PhantomData,
@@ -33,7 +30,7 @@ where
         value: 3.3,
     };
     const MAX_ADC_VALUE: f32 = 4096.0;
-    const SUM_NUM: u16 = 100;
+    // const SUM_NUM: u16 = 100;
 
     pub fn new(
         adc_pin: PIN,
@@ -43,7 +40,7 @@ where
     ) -> Self {
         let alpha =
             1.0 / (2.0 * core::f32::consts::PI * (period * cut_off_frequency).get::<ratio>() + 1.0);
-        let voltmeter = Self {
+        let mut voltmeter = Self {
             adc_pin,
             voltage: ElectricPotential::new::<volt>(0.0),
             alpha,
@@ -59,11 +56,20 @@ where
         voltmeter
     }
 
-    pub fn update_voltage(&mut self, adc: &mut Adc<ADC>) {
+    #[allow(unused)]
+    pub fn update_voltage<T>(&mut self, adc: &mut T)
+    where
+        T: OneShot<ADC, u16, PIN>,
+        <T as OneShot<ADC, u16, PIN>>::Error: core::fmt::Debug,
+    {
         self.voltage = self.alpha * self.voltage + (1.0 - self.alpha) * self.current_voltage(adc);
     }
 
-    fn current_voltage(&mut self, adc: &mut Adc<ADC>) -> ElectricPotential {
+    fn current_voltage<T>(&mut self, adc: &mut T) -> ElectricPotential
+    where
+        T: OneShot<ADC, u16, PIN>,
+        <T as OneShot<ADC, u16, PIN>>::Error: core::fmt::Debug,
+    {
         let value = block!(adc.read(&mut self.adc_pin)).unwrap() as f32;
         value * Self::AVDD_VOLTAGE * self.ratio / Self::MAX_ADC_VALUE
     }
