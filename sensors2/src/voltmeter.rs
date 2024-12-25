@@ -8,12 +8,12 @@ use uom::si::{
     ratio::ratio,
 };
 
-pub struct Voltmeter<T, ADC, PIN>
+pub struct Voltmeter<'a, T, ADC, PIN>
 where
     T: OneShot<ADC, u16, PIN>,
     PIN: Channel<ADC>,
 {
-    adc: T,
+    adc: &'a mut T,
     adc_pin: PIN,
     voltage: ElectricPotential,
     alpha: f32,
@@ -21,7 +21,7 @@ where
     _adc_marker: PhantomData<ADC>,
 }
 
-impl<T, ADC, PIN> Voltmeter<T, ADC, PIN>
+impl<'a, T, ADC, PIN> Voltmeter<'a, T, ADC, PIN>
 where
     T: OneShot<ADC, u16, PIN>,
     PIN: Channel<ADC>,
@@ -36,7 +36,7 @@ where
     const SUM_NUM: u16 = 100;
 
     pub fn new(
-        adc: T,
+        adc: &'a mut T,
         adc_pin: PIN,
         period: Time,
         cut_off_frequency: Frequency,

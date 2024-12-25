@@ -3,28 +3,28 @@ use embedded_hal::{adc::Channel, adc::OneShot, PwmPin};
 use nb::block;
 // use uom::si::{f32::Length, length::meter, ratioratio::};
 
-pub struct Infrared<T, ADC, AdcPin, TimPin>
+pub struct Infrared<'a, T, ADC, AdcPin, TimPin>
 where
     T: OneShot<ADC, u16, AdcPin>,
     AdcPin: Channel<ADC>,
     TimPin: PwmPin,
 {
-    adc: T,
+    adc: &'a mut T,
     adc_pin: AdcPin,
     value: u16,
     _adc_marker: PhantomData<ADC>,
-    tim_pin: TimPin,
+    tim_pin: &'a mut TimPin,
     ratio: f32,
 }
 
-impl<T, ADC, AdcPin, TimPin> Infrared<T, ADC, AdcPin, TimPin>
+impl<'a, T, ADC, AdcPin, TimPin> Infrared<'a, T, ADC, AdcPin, TimPin>
 where
     T: OneShot<ADC, u16, AdcPin>,
     AdcPin: Channel<ADC>,
     <T as OneShot<ADC, u16, AdcPin>>::Error: core::fmt::Debug,
     TimPin: PwmPin<Duty = u16>,
 {
-    pub fn new(adc: T, adc_pin: AdcPin, tim_pin: TimPin, duty_ratio: f32) -> Self {
+    pub fn new(adc: &'a mut T, adc_pin: AdcPin, tim_pin: &'a mut TimPin, duty_ratio: f32) -> Self {
         let mut infrared = Self {
             adc,
             adc_pin,
