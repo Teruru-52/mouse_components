@@ -134,12 +134,10 @@ where
         address: u16,
         buffer: &'w mut [u8],
     ) -> Result<&'w [u8], AS5055AError> {
-        // buffer[0] = (address >> 8) as u8;
-        // buffer[1] = address as u8;
-        buffer[0] = 0xFF;
-        buffer[1] = 0xFF;
+        buffer[0] = (address >> 8) as u8;
+        buffer[1] = address as u8;
         let buffer = spi.transfer(buffer).map_err(|_| AS5055AError)?;
-        Ok(&buffer[1..])
+        Ok(&buffer[2..])
     }
 
     #[inline]
