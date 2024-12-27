@@ -78,13 +78,7 @@ where
     const ANGLE_OUT_H: u8 = 0x3F;
     const ANGLE_OUT_L: u8 = 0xFF;
 
-    pub fn new<S, V, W>(
-        spi: &mut S,
-        cs: T,
-        delay: &mut V,
-        timer: &mut W,
-        tire_radius: Angle,
-    ) -> Self
+    pub fn new<S, V, W>(spi: &mut S, cs: T, delay: &mut V, timer: &mut W) -> Self
     where
         S: Transfer<u8>,
         V: DelayMs<u32>,
@@ -92,7 +86,6 @@ where
     {
         let mut as5055a = Self {
             cs,
-            radius: tire_radius,
             angle: Default::default(),
             prev_angle: Default::default(),
         };
