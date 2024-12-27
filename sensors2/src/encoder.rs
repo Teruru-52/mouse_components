@@ -65,7 +65,6 @@ impl From<Infallible> for AS5055AError {
 
 pub struct AS5055A<T> {
     cs: T,
-    radius: Angle,
     angle: Angle,
     prev_angle: Angle,
 }
@@ -77,6 +76,11 @@ where
     //RA: register address
     const ANGLE_OUT_H: u8 = 0x3F;
     const ANGLE_OUT_L: u8 = 0xFF;
+    const SCALE_FACTOR: Angle = Angle {
+        dimension: PhantomData,
+        units: PhantomData,
+        value: 0.001_534_355_3, // 2*pi/4095
+    };
 
     pub fn new<S, V, W>(spi: &mut S, cs: T, delay: &mut V, timer: &mut W) -> Self
     where
@@ -142,7 +146,7 @@ where
     }
 
     fn convert_raw_data_to_angle(&mut self, raw_value: i16) -> Angle {
-        self.radius * raw_value as f32
+        Self::SCALE_FACTOR * raw_value as f32
     }
 
     pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
