@@ -142,7 +142,7 @@ where
 
     #[inline]
     fn connect_raw_data(&self, higher: u8, lower: u8) -> u16 {
-        (((higher as u16) << 8 | lower as u16) & 0x3FFC >> 2) as u16
+        ((((higher as u16) << 8 | lower as u16) & 0x3FFC) >> 2) as u16
     }
 
     fn convert_raw_data_to_angle(&mut self, raw_value: u16) -> Angle {
@@ -150,7 +150,7 @@ where
     }
 
     pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
-        let mut buffer = [0; 8];
+        let mut buffer = [0; 4];
         let buffer = self.read_from_registers(spi, Self::ANGLE_OUT, &mut buffer)?;
         self.angle = -self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
         Ok(self.angle)
