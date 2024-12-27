@@ -74,8 +74,7 @@ where
     T: OutputPin,
 {
     //RA: register address
-    const ANGLE_OUT_H: u8 = 0x3F;
-    const ANGLE_OUT_L: u8 = 0xFF;
+    const ANGLE_OUT: u16 = 0xFFFF;
     const SCALE_FACTOR: Angle = Angle {
         dimension: PhantomData,
         units: PhantomData,
@@ -121,7 +120,7 @@ where
     fn read_from_registers<'w, S: Transfer<u8>>(
         &mut self,
         spi: &mut S,
-        address: u8,
+        address: u16,
         buffer: &'w mut [u8],
     ) -> Result<&'w [u8], AS5055AError> {
         self.assert()?;
@@ -132,10 +131,11 @@ where
 
     fn _read_from_registers<'w, S: Transfer<u8>>(
         spi: &mut S,
-        address: u8,
+        address: u16,
         buffer: &'w mut [u8],
     ) -> Result<&'w [u8], AS5055AError> {
-        buffer[0] = address | 0x80;
+        buffer[0] = (address >> 8) as u8;
+        buffer[1] = address as u8;
         let buffer = spi.transfer(buffer).map_err(|_| AS5055AError)?;
         Ok(&buffer[1..])
     }
@@ -151,7 +151,7 @@ where
 
     pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         let mut buffer = [0; 3];
-        let buffer = self.read_from_registers(spi, Self::ANGLE_OUT_H, &mut buffer)?;
+        let buffer = self.read_from_registers(spi, Self::ANGLE_OUT, &mut buffer)?;
         self.angle = -self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
         Ok(self.angle)
     }
