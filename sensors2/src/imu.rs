@@ -68,7 +68,7 @@ where
             gyro_offset: Default::default(),
         };
 
-        icm.init(spi, delay, timer);
+        // icm.init(spi, delay, timer);
 
         icm
     }
