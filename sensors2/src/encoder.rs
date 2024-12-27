@@ -156,8 +156,8 @@ where
         Ok(self.angle)
     }
 
-    pub fn dist_angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> Angle {
+    pub fn dist_angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         self.angle(spi).unwrap();
-        self.angle - self.prev_angle
+        Ok(self.angle - self.prev_angle)
     }
 }
