@@ -143,8 +143,7 @@ where
         buffer[0] = (address >> 8) as u8;
         buffer[1] = address as u8;
         let buffer = spi.transfer(buffer).map_err(|_| AS5055AError)?;
-        // Ok(&buffer[2..])
-        Ok(&buffer[0..])
+        Ok(&buffer[2..])
     }
 
     #[inline]
