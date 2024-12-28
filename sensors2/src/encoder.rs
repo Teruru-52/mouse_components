@@ -126,13 +126,7 @@ where
         self.assert()?;
         let res = Self::_read_from_registers(spi, address, buffer);
         self.deassert()?;
-        // res
-        buffer[0] = 0x00;
-        buffer[1] = 0x00;
-        self.assert()?;
-        let res_ = Self::_read_from_registers(spi, address, buffer);
-        self.deassert()?;
-        res_
+        res
     }
 
     fn _read_from_registers<'w, S: Transfer<u8>>(
