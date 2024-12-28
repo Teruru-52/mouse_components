@@ -169,6 +169,7 @@ where
     pub fn dist_angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         self.angle(spi).unwrap();
         let mut dist_angle = self.angle - self.prev_angle;
+        self.prev_angle = self.angle;
         if dist_angle.abs() > Self::DIST_ANGLE_MAX {
             if dist_angle > Angle::new::<revolution>(0.0) {
                 dist_angle -= Angle::new::<revolution>(1.0);
