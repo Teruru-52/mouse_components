@@ -80,6 +80,16 @@ where
         units: PhantomData,
         value: 0.001_534_355_3, // 2*pi/4095
     };
+    const DIST_ANGLE_MAX: Angle = Angle {
+        dimension: PhantomData,
+        units: PhantomData,
+        value: 4.712_388_98, // 270 [deg]
+    };
+    const DIST_ANGLE_MIN: Angle = Angle {
+        dimension: PhantomData,
+        units: PhantomData,
+        value: 0.001_534_355_3, // 2*pi/4095
+    };
 
     pub fn new<S, V, W>(spi: &mut S, cs: T, delay: &mut V, timer: &mut W) -> Self
     where
@@ -158,6 +168,16 @@ where
 
     pub fn dist_angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         self.angle(spi).unwrap();
-        Ok(self.angle - self.prev_angle)
+        let mut dist_angle = self.angle - self.prev_angle;
+        if dist_angle.abs() > Self::DIST_ANGLE_MAX {
+            if dist_angle > Angle::new::<revolution>(0.0) {
+                dist_angle -= Angle::new::<revolution>(1.0);
+            } else {
+                dist_angle += Angle::new::<revolution>(1.0);
+            }
+        } else if dist_angle.abs() < Self::DIST_ANGLE_MIN {
+            dist_angle = Angle::new::<revolution>(0.0);
+        }
+        Ok(dist_angle)
     }
 }
