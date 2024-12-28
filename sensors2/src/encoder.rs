@@ -83,7 +83,7 @@ where
 
     pub fn new<S, V, W>(spi: &mut S, cs: T, delay: &mut V, timer: &mut W) -> Self
     where
-        S: Transfer<u8>,
+        S: Transfer<u16>,
         V: DelayMs<u32>,
         W: CountDown,
     {
@@ -100,7 +100,7 @@ where
 
     pub fn init<S, V, W>(&mut self, spi: &mut S, delay: &mut V, timer: &mut W)
     where
-        S: Transfer<u8>,
+        S: Transfer<u16>,
         V: DelayMs<u32>,
         W: CountDown,
     {
@@ -117,7 +117,7 @@ where
     }
 
     //size of buffer should be equal to {data length}+1
-    fn read_from_registers<'w, S: Transfer<u8>>(
+    fn read_from_registers<'w, S: Transfer<u16>>(
         &mut self,
         spi: &mut S,
         address: u16,
