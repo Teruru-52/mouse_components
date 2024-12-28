@@ -121,23 +121,24 @@ where
         &mut self,
         spi: &mut S,
         address: u16,
-        buffer: &'w mut [u8],
-    ) -> Result<&'w [u8], AS5055AError> {
+        buffer: &'w mut [u16],
+    ) -> Result<&'w [u16], AS5055AError> {
         self.assert()?;
         let res = Self::_read_from_registers(spi, address, buffer);
         self.deassert()?;
         res
     }
 
-    fn _read_from_registers<'w, S: Transfer<u8>>(
+    fn _read_from_registers<'w, S: Transfer<u16>>(
         spi: &mut S,
         address: u16,
-        buffer: &'w mut [u8],
-    ) -> Result<&'w [u8], AS5055AError> {
-        buffer[0] = (address >> 8) as u8;
-        buffer[1] = address as u8;
+        buffer: &'w mut [u16],
+    ) -> Result<&'w [u16], AS5055AError> {
+        // buffer[0] = (address >> 8) as u8;
+        // buffer[1] = address as u8;
+        buffer[0] = address;
         let buffer = spi.transfer(buffer).map_err(|_| AS5055AError)?;
-        Ok(&buffer[2..])
+        Ok(&buffer[1..])
     }
 
     #[inline]
@@ -149,14 +150,14 @@ where
         Self::SCALE_FACTOR * raw_value as f32
     }
 
-    pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
-        let mut buffer = [0; 4];
+    pub fn angle<S: Transfer<u16>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
+        let mut buffer = [0; 2];
         let buffer = self.read_from_registers(spi, Self::ANGLE_OUT, &mut buffer)?;
-        self.angle = -self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
+        self.angle = -self.convert_raw_data_to_angle(buffer[0]);
         Ok(self.angle)
     }
 
-    pub fn dist_angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
+    pub fn dist_angle<S: Transfer<u16>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         self.angle(spi).unwrap();
         Ok(self.angle - self.prev_angle)
     }
