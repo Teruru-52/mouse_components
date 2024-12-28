@@ -152,7 +152,7 @@ where
     pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
         let mut buffer = [0; 2];
         let buffer = self.read_from_registers(spi, Self::ANGLE_OUT, &mut buffer)?;
-        self.angle = -self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
+        self.angle = self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
         Ok(self.angle)
     }
 
