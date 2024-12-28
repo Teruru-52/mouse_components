@@ -137,7 +137,7 @@ where
         buffer[0] = (address >> 8) as u8;
         buffer[1] = address as u8;
         let buffer = spi.transfer(buffer).map_err(|_| AS5055AError)?;
-        Ok(&buffer[1..])
+        Ok(&buffer[0..])
     }
 
     #[inline]
@@ -150,7 +150,7 @@ where
     }
 
     pub fn angle<S: Transfer<u8>>(&mut self, spi: &mut S) -> nb::Result<Angle, AS5055AError> {
-        let mut buffer = [0; 4];
+        let mut buffer = [0; 2];
         let buffer = self.read_from_registers(spi, Self::ANGLE_OUT, &mut buffer)?;
         self.angle = -self.convert_raw_data_to_angle(self.connect_raw_data(buffer[0], buffer[1]));
         Ok(self.angle)
